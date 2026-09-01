@@ -726,35 +726,35 @@ setInterval(
       PLAYERS_INTERVAL_MS
     );
 
-// TEST CONFIGURATION
-// Replace this with any past time to simulate server boot:
-// Example: Server came online 25 minutes ago
-const now = new Date();
-const TEST_ONLINE_TIME = new Date(
-  now.getFullYear(),
-  now.getMonth(),
-  now.getDate(),
-  10, // 10 AM
-  15, // 15 minutes
-  30  // 30 seconds
-);
+// // TEST CONFIGURATION
+// // Replace this with any past time to simulate server boot:
+// // Example: Server came online 25 minutes ago
+// const now = new Date();
+// const TEST_ONLINE_TIME = new Date(
+//   now.getFullYear(),
+//   now.getMonth(),
+//   now.getDate(),
+//   10, // 10 AM
+//   15, // 15 minutes
+//   30  // 30 seconds
+// );
 
-function testAlbinoSpawn() {
-  // Hardcode the transition date for testing
-  transitionDate = TEST_ONLINE_TIME;
+// function testAlbinoSpawn() {
+//   // Hardcode the transition date for testing
+//   transitionDate = TEST_ONLINE_TIME;
 
-  // Show the hardcoded time on the UI so you can verify
-  if (transitionTimeEl) {
-    transitionTimeEl.textContent = formatClock(transitionDate) + " (TEST)";
-    transitionTimeEl.classList.remove('empty');
-  }
+//   // Show the hardcoded time on the UI so you can verify
+//   if (transitionTimeEl) {
+//     transitionTimeEl.textContent = formatClock(transitionDate) + " (TEST)";
+//     transitionTimeEl.classList.remove('empty');
+//   }
 
-  // Run the spawn calculation
-  albinoSpawn();
-}
+//   // Run the spawn calculation
+//   albinoSpawn();
+// }
 
-// Call the test function directly
-testAlbinoSpawn();
+// // Call the test function directly
+// testAlbinoSpawn();
 
 
   </script>
