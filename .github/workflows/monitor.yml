@@ -1,0 +1,29 @@
+name: Monitor Antica transition
+
+on:
+  schedule:
+    # 07:55 UTC covers 09:55 CEST (summer time)
+    - cron: '55 7 * * *'
+    # 08:55 UTC covers 09:55 CET (winter time)
+    - cron: '55 8 * * *'
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Poll world status and record transition
+        run: node scripts/monitor.mjs
+
+      - name: Commit result
+        run: |
+          git config user.name "tibia-bot"
+          git config user.email "actions@github.com"
+          git add data/status.json
+          git diff --quiet --cached || git commit -m "Update world status data"
+          git push
