@@ -38,7 +38,7 @@
       padding: 0;
       min-height: 100vh;
       background:
-        var(--stone-1);
+        var(--stone-0);
       color: var(--parchment);
       font-family: 'Spectral', Georgia, serif;
       display: flex;
@@ -48,6 +48,7 @@
     }
 
     .frame {
+      margin: 10vh;
       width: 100%;
       max-width: 560px;
       border: 1px solid var(--stone-3);
@@ -106,6 +107,16 @@
     }
 
     h1 {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 34px;
+      text-align: center;
+      margin: 0 0 30px;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+    }
+
+        h2 {
       font-family: 'Cinzel', serif;
       font-weight: 700;
       font-size: 34px;
@@ -186,7 +197,7 @@
     }
 
     .status-text.idle {
-      color: var(--moss);
+      color: var(--parchment);
     }
 
     .field {
@@ -244,10 +255,30 @@
       font-style: italic;
       margin-top: 18px;
     }
+
+    img {
+
+      min-width: 20vh;
+      max-width: 20vh;
+    }
   </style>
 </head>
 
 <body>
+
+  <div class="frame">
+    <div class="frame-inner">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+    <h1 >Todays boosted boss</h1>
+    <div class="status-row">
+      <h2 class="status-text idle" id="boostedBossName"></h2>
+    </div>
+    <img id="boostedBossImage">
+    </div>
+  </div>
 
   <div class="frame">
     <div class="frame-inner">
@@ -306,11 +337,40 @@
     </div>
   </div>
 
+  <div class="frame">
+    <div class="frame-inner">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+    <h2 >Next Albino drake spawn</h2>
+    <div class="status-row">
+      <h3 class="status-text idle" id="albino-spawn-time"></h3>
+    </div>
+    <img id="albino">
+    </div>
+  </div>
+
   <script>
+
+const albinoSpawnTimeEl = document.getElementById('albino-spawn-time');
+const albinoImgEl = document.getElementById('albino');
+
+if (albinoImgEl) {
+  albinoImgEl.src = "https://static.wikia.nocookie.net/tibia/images/0/06/Albino_Dragon.gif/revision/latest?cb=20231010124222&path-prefix=en&format=original"; // Example image URL
+  albinoImgEl.alt = "Albino Drake";
+}
+
     const WORLD = "Antica";
+
+    const boostedBossName = document.getElementById("boostedBossName");
+
+    const boostedBossImage = document.getElementById("boostedBossImage");
 
     const API_URL =
       "https://api.tibiadata.com/v4/world/" + WORLD;
+
+      const API_BOOSTED_BOSS = "https://api.tibiadata.com/v4/boostablebosses"
 
 
     // Monitoring window: 09:55–10:20 Europe/Stockholm time.
@@ -404,6 +464,35 @@
     }
 
 
+    async function fetchBoss() {
+      const res = await fetch(API_BOOSTED_BOSS)
+
+      const data = await res.json();
+
+    const boss = data.boostable_bosses.boosted;
+
+    boostedBossName.textContent = boss.name;
+    boostedBossImage.src = boss.image_url;
+    boostedBossImage.alt = boss.name;
+    }
+ 
+function albinoSpawn() {
+  if (!transitionDate || !albinoSpawnTimeEl) return;
+
+  const now = new Date();
+  
+  // First spawn occurs 10 minutes after server comes online
+  let nextSpawn = new Date(transitionDate.getTime() + 10 * 60 * 1000);
+
+  // Subsequent spawns repeat every 30 minutes
+  while (nextSpawn <= now) {
+    nextSpawn = new Date(nextSpawn.getTime() + 30 * 60 * 1000);
+  }
+
+  // Display the next calculated spawn time
+  albinoSpawnTimeEl.textContent = formatClock(nextSpawn);
+}
+
     async function fetchWorld() {
       const res = await fetch(API_URL, {
         cache: 'no-store'
@@ -461,6 +550,13 @@
           transitionTimeEl.classList.remove('empty');
         }
 
+        albinoSpawn();
+
+        fetchBoss();
+
+        setInterval(fetchBoss, 60 * 1000);
+
+        setInterval(albinoSpawn, 60 * 1000);
 
         previousStatus = currentState;
 
@@ -629,6 +725,37 @@ setInterval(
       updatePlayerCount,
       PLAYERS_INTERVAL_MS
     );
+
+// TEST CONFIGURATION
+// Replace this with any past time to simulate server boot:
+// Example: Server came online 25 minutes ago
+// const now = new Date();
+// const TEST_ONLINE_TIME = new Date(
+//   now.getFullYear(),
+//   now.getMonth(),
+//   now.getDate(),
+//   10, // 10 AM
+//   15, // 15 minutes
+//   30  // 30 seconds
+// );
+
+// function testAlbinoSpawn() {
+//   // Hardcode the transition date for testing
+//   transitionDate = TEST_ONLINE_TIME;
+
+//   // Show the hardcoded time on the UI so you can verify
+//   if (transitionTimeEl) {
+//     transitionTimeEl.textContent = formatClock(transitionDate) + " (TEST)";
+//     transitionTimeEl.classList.remove('empty');
+//   }
+
+//   // Run the spawn calculation
+//   albinoSpawn();
+// }
+
+// // Call the test function directly
+// testAlbinoSpawn();
+
 
   </script>
 
