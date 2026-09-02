@@ -7,7 +7,12 @@ const OUT_PATH = 'data/status.json';
 const WINDOW_START_MIN = 9 * 60 + 55; // 09:55
 const WINDOW_END_MIN = 10 * 60 + 20;  // 10:20
 const POLL_INTERVAL_MS = 5000;        // poll every 5s
-const RUN_DURATION_MS = 26 * 60 * 1000; // slightly longer than the window
+
+// The job may start a bit early (to dodge GitHub's top-of-hour scheduling
+// congestion). Allow it to wait up to this long for the window to open
+// before giving up entirely.
+const MAX_WAIT_MS = 20 * 60 * 1000; // give up waiting after 20 min
+const WAIT_POLL_MS = 15 * 1000;     // check every 15s while waiting
 
 function stockholmMinutesOfDay(date) {
   const fmt = new Intl.DateTimeFormat('en-GB', {
@@ -24,7 +29,20 @@ function stockholmMinutesOfDay(date) {
 
 function isWithinWindow(date) {
   const m = stockholmMinutesOfDay(date);
-  return m >= WINDOW_START_MIN - 2 && m <= WINDOW_END_MIN; // small buffer
+  return m >= WINDOW_START_MIN && m <= WINDOW_END_MIN;
+}
+
+function isPastWindow(date) {
+  const m = stockholmMinutesOfDay(date);
+  return m > WINDOW_END_MIN;
+}
+
+// How long from `now` until the window actually ends, used to size the
+// polling loop dynamically instead of a fixed duration.
+function msUntilWindowEnd(date) {
+  const m = stockholmMinutesOfDay(date);
+  const minsLeft = WINDOW_END_MIN - m;
+  return Math.max(0, minsLeft * 60 * 1000);
 }
 
 async function fetchWorld() {
@@ -46,9 +64,17 @@ function loadExisting() {
 }
 
 async function main() {
-  const now = new Date();
-  if (!isWithinWindow(now)) {
-    console.log('Not within monitoring window (wrong DST trigger). Exiting.');
+  const startedAt = new Date();
+  console.log(
+    'Job started at',
+    startedAt.toISOString(),
+    '| Stockholm time now:',
+    Math.floor(stockholmMinutesOfDay(startedAt) / 60) + ':' +
+      String(stockholmMinutesOfDay(startedAt) % 60).padStart(2, '0')
+  );
+
+  if (isPastWindow(startedAt)) {
+    console.log('Already past the end of today\'s window. Exiting.');
     return;
   }
 
@@ -61,11 +87,25 @@ async function main() {
     return;
   }
 
+  // If we started early (e.g. to dodge GitHub's top-of-hour congestion),
+  // wait here until the real monitoring window opens.
+  const waitStart = Date.now();
+  while (!isWithinWindow(new Date())) {
+    if (Date.now() - waitStart > MAX_WAIT_MS) {
+      console.log('Waited too long for the window to open. Exiting.');
+      return;
+    }
+    await new Promise(r => setTimeout(r, WAIT_POLL_MS));
+  }
+
+  console.log('Window is open. Beginning polling.');
+
   let previousStatus = null;
   let transitionISO = null;
-  const start = Date.now();
+  const pollStart = Date.now();
+  const pollDuration = msUntilWindowEnd(new Date()) + 60 * 1000; // small buffer
 
-  while (Date.now() - start < RUN_DURATION_MS) {
+  while (Date.now() - pollStart < pollDuration) {
     try {
       const world = await fetchWorld();
       const raw = (world.status || '').toLowerCase();
