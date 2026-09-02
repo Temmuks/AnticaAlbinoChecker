@@ -2,10 +2,10 @@ name: Monitor Antica transition
 
 on:
   schedule:
-    # 07:55 UTC covers 09:55 CEST (summer time)
-    - cron: '55 7 * * *'
-    # 08:55 UTC covers 09:55 CET (winter time)
-    - cron: '55 8 * * *'
+    # 07:40 UTC — script waits until 09:55 Stockholm time to start polling
+    - cron: '40 7 * * *'
+    # 08:40 UTC covers the CET (winter) offset
+    - cron: '40 8 * * *'
   workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
 
 permissions:
